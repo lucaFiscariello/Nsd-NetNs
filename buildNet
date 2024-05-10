@@ -1,0 +1,176 @@
+num_plane_orbit=5
+num_sat_plane=10
+
+
+router_template_name="R"
+server="server"
+client="client"
+
+# add client and server namespaces
+sudo ip netns add $client
+sudo ip netns add $server
+
+# add routers namespaces
+for ((i = 1; i <= num_plane_orbit*num_sat_plane; i++)); do
+
+    router_temp="$router_template_name"
+    router_temp+=$i
+    sudo ip netns add $router_temp
+    echo create router : $router_temp
+
+done
+
+
+# add interfaces for client and server
+sudo ip link add $client-bridge type veth peer name bridge-$client
+sudo ip link add br-$client type bridge
+sudo ip link set bridge-$client master br-$client
+sudo sysctl -w net.ipv6.conf.br-$client.disable_ipv6=1
+sudo sysctl -w net.ipv6.conf.bidge-$client.disable_ipv6=1
+
+sudo ip link add $server-bridge type veth peer name bridge-$server
+sudo ip link add br-$server type bridge
+sudo ip link set bridge-$server master br-$server
+sudo  sysctl -w net.ipv6.conf.br-$server.disable_ipv6=1
+sudo  sysctl -w net.ipv6.conf.bridge-$server.disable_ipv6=1
+
+echo create link : $client-bridge and $server-bridge
+
+# add interfaces for routers-client connection
+for ((i = 1; i <= num_sat_plane; i++)); do
+
+    router_temp="$router_template_name"
+    router_temp+=$i
+    sudo ip link add $client-$router_temp type veth peer name $router_temp-$client
+    sudo ip link set $client-$router_temp master br-$client
+    sudo  sysctl -w net.ipv6.conf.$client-$router_temp.disable_ipv6=1
+
+    echo create link : $client-$router_temp and peer
+
+done
+
+
+# add interfaces for routers-server connection
+for ((i = 1+ num_sat_plane*num_plane_orbit-num_sat_plane; i <= num_sat_plane*num_plane_orbit; i++)); do
+
+    router_temp="$router_template_name"
+    router_temp+=$i
+    sudo ip link add $server-$router_temp type veth peer name $router_temp-$server
+    sudo ip link set $server-$router_temp master br-$server
+    sudo  sysctl -w net.ipv6.conf.$server-$router_temp.disable_ipv6=1
+
+    echo create link : $server-$router_temp and peer
+
+done
+
+
+# add interfaces for routers-routers connection
+for ((i = 1; i <= num_sat_plane*num_plane_orbit-1; i++)); do
+
+        if [ ! $(( i % num_sat_plane )) -eq 0 ]; then
+            j=$((i+1))
+            router_temp="$router_template_name$i-$router_template_name$j"
+            router_temp_peer="$router_template_name$j-$router_template_name$i"
+            sudo ip link add $router_temp type veth peer name $router_temp_peer
+            echo create link :  $router_temp and peer
+        fi 
+
+        if [ $i -lt $((1 + num_sat_plane * num_plane_orbit - num_sat_plane)) ]; then
+            start=$(( (i + num_sat_plane - 1) / num_sat_plane ))
+            for ((j = start*num_sat_plane+1; j <= start*num_sat_plane+num_sat_plane; j++)); do                
+                router_temp="$router_template_name$i-$router_template_name$j"
+                router_temp_peer="$router_template_name$j-$router_template_name$i"
+                sudo ip link add $router_temp type veth peer name $router_temp_peer
+                echo create link :  $router_temp and peer 
+            done
+        fi 
+
+
+done
+
+
+# connect interface to ns : router 
+sudo ip link set $client-bridge netns $client
+sudo ip link set $server-bridge netns $server
+sudo ip netns exec $client sysctl -w net.ipv6.conf.$client-bridge.disable_ipv6=1
+sudo ip netns exec $server sysctl -w net.ipv6.conf.$server-bridge.disable_ipv6=1
+
+echo connect $client-bridge and $server-bridge to $client and $server namespaces
+
+interfaces=$(ip link show | cut -d' ' -f2 | sed 's/://')
+for ((i = 1; i <= num_plane_orbit*num_sat_plane; i++)); do
+
+    router_temp="$router_template_name"
+    router_temp+=$i
+
+    for interface in $interfaces; do
+        interface=$(echo "$interface" | cut -d '@' -f 1)
+
+        if [ "$(echo "$interface" | cut -d '-' -f 1)" == "$router_temp" ]; then
+            sudo ip link set $interface netns $router_temp
+            sudo ip netns exec $router_temp sysctl -w net.ipv6.conf.$interface.disable_ipv6=1
+
+            echo connect interface $interface to namespace $router_temp
+        fi
+
+        if [ "${interface:0:1}" != "$router_template_name" ]; then
+            sudo ip link set $interface up
+        fi
+
+    done
+
+done
+
+# set ip for client and server
+sudo ip netns exec $client ip link set up $client-bridge
+sudo ip netns exec $client ip addr add 192.168.1.1/24 dev $client-bridge
+sudo ip netns exec $server ip link set up $server-bridge
+sudo ip netns exec $server ip addr add 192.168.5.1/24 dev $server-bridge
+
+
+# Configure OVS
+sudo ip netns exec $client ./ovs-ns/startOvsDb.sh client
+sudo ip netns exec $client ./ovs-ns/startOvs.sh client
+sudo ip netns exec $client ./ovs-ns/createBr.sh client
+
+sudo ip netns exec $server ./ovs-ns/startOvsDb.sh server
+sudo ip netns exec $server ./ovs-ns/startOvs.sh server
+sudo ip netns exec $server ./ovs-ns/createBr.sh server
+
+for ((i = 1; i <= num_plane_orbit*num_sat_plane; i++)); do
+
+    router_temp="$router_template_name"
+    router_temp+=$i
+
+    sudo ip netns exec $router_temp ./ovs-ns/startOvsDb.sh $router_temp
+    sudo ip netns exec $router_temp ./ovs-ns/startOvs.sh $router_temp
+    sudo ip netns exec $router_temp ./ovs-ns/createBr.sh $router_temp
+    
+done
+
+for ((i = 1; i <= num_plane_orbit*num_sat_plane; i++)); do
+
+
+    router_temp="$router_template_name"
+    router_temp+=$i
+    interfaces=$(sudo ip netns exec $router_temp ip link show | cut -d' ' -f2 | sed 's/://')
+
+    for interface in $interfaces; do
+
+        if [  "$(echo "$interface" | cut -d '-' -f 1)" == "$router_temp" ]; then
+            interface=$(echo "$interface" | cut -d '@' -f 1)
+            sudo ip netns exec $router_temp ovs-vsctl --db=unix:/tmp/ovs-$router_temp/db.sock add-port br-$router_temp $interface
+        fi
+
+    done
+
+done
+
+
+# add default route for client e server
+sudo ip netns exec client ip route add 192.168.5.0/24 dev client-bridge
+sudo ip netns exec server ip route add 192.168.1.0/24 dev server-bridge
+
+
+
+

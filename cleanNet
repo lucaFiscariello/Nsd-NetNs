@@ -1,0 +1,56 @@
+num_plane_orbit=5
+num_sat_plane=10
+
+router_template_name="R"
+server="server"
+client="client"
+
+sudo kill -9 $(cat /tmp/ovs-client/ovsdb-server.pid)
+sudo kill -9 $(cat /tmp/ovs-client/ovs-vswitchd.pid)
+sudo rm -rf /tmp/ovs-client
+
+sudo kill -9 $(cat /tmp/ovs-server/ovsdb-server.pid)
+sudo kill -9 $(cat /tmp/ovs-server/ovs-vswitchd.pid)
+sudo rm -rf /tmp/ovs-server
+
+for ((i = 1; i <= num_plane_orbit*num_sat_plane; i++)); do
+
+    router_temp="$router_template_name"
+    router_temp+=$i
+
+    sudo kill -9 $(cat /tmp/ovs-$router_temp/ovsdb-server.pid)
+    sudo kill -9 $(cat /tmp/ovs-$router_temp/ovs-vswitchd.pid)
+    sudo rm -rf /tmp/ovs-$router_temp
+
+done
+
+# del client and server namespaces
+sudo ip netns del $client
+sudo ip netns del $server
+
+echo del $client and $server
+
+# del router namespaces
+for ((i = 1; i <= num_plane_orbit*num_sat_plane; i++)); do
+
+    router_temp="$router_template_name"
+    router_temp+=$i
+    sudo ip netns del $router_temp
+    echo del router : $router_temp
+
+done
+
+sudo ip link del br-client
+sudo ip link del br-server
+
+interfaces=$(ip link show | cut -d' ' -f2 | sed 's/://')
+for interface in $interfaces; do
+
+        interface=$(echo "$interface" | cut -d '@' -f 1)
+        if [ "${interface:0:1}" == "$router_template_name" ]; then
+            sudo ip link del $interface 
+        fi
+
+done
+
+
