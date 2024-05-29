@@ -1,5 +1,5 @@
-num_plane_orbit=5
-num_sat_plane=10
+num_plane_orbit=3
+num_sat_plane=3
 
 
 router_template_name="R"
