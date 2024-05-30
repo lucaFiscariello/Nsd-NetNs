@@ -67,6 +67,16 @@ You can change routes in routers dynamically by running the command:
 ./emulate.sh
 ```
 This script updates the communication routes between routers every 5 seconds.
+To study the routing algoritm you can execute the following command from two new terminals:
+```
+#inside one new terminal
+sudo ip netns exec server iperf3 -s 
+```
+
+```
+#inside another one terminal
+sudo ip netns exec client iperf3 -c 192.168.5.1 -t0 -u -b 20Mbit
+```
 
 ## Clean net
 
