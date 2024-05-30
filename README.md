@@ -64,7 +64,7 @@ sudo ip netns exec R1 tcpdump
 ## Modify ping dinamically
 You can change routes in routers dynamically by running the command:
 ```
-./emulate.sh
+./emulation.sh
 ```
 This script updates the communication routes between routers every 5 seconds.
 To study the routing algoritm you can execute the following command from two new terminals:
