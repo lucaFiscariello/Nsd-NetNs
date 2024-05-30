@@ -34,7 +34,7 @@ close() {
 while true
 do
     # set roles to configure the ping client to server
-    connect client R1 R4 1Mbit 2Mbit 10ms 10ms
+    connect client R1 R4 1Mbit 2Mbit 10ms 20ms
     connect R1 R4 R7 5Mbit 2Mbit 10ms 20ms
     connect R4 R7 server 10Mbit 2Mbit 10ms 30ms
 
