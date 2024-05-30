@@ -66,7 +66,10 @@ You can change routes in routers dynamically by running the command:
 ```
 ./emulation.sh
 ```
-This script updates the communication routes between routers every 5 seconds.
+This script updates the communication routes between routers every 5 seconds. Example of what a command in emulation.sh script does:
+
+![Consegna5 drawio(9)](https://github.com/lucaFiscariello/Nsd-NetNs/assets/80633764/81631efc-e3f2-4f52-9317-38a112b0c68c)
+
 To study the routing algoritm you can execute the following command from two new terminals:
 ```
 #inside one new terminal
