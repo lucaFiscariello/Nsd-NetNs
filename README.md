@@ -15,6 +15,7 @@ chmod +x buildNet
 chmod +x cleanNet
 chmod +x emulation_best_link_quality.sh
 chmod +x emulation_best_latency.sh
+chmod +x emulation_shortest_hop.sh
 chmod +x ovs-ns/createBr.sh
 chmod +x ovs-ns/createBr.sh
 chmod +x ovs-ns/startOvs.sh
@@ -76,6 +77,33 @@ Clean the environment and then run the new emulation script:
 ./cleanNet
 ./buildNet
 ./emulation_best_latency.sh
+```
+To test the ping you can run:
+```
+sudo ip netns exec client ping 192.168.5.1
+```
+
+To study the routing algoritm you can execute the following command from two new terminals:
+```
+#inside one new terminal
+sudo ip netns exec server iperf3 -s 
+```
+
+```
+#inside another terminal
+sudo ip netns exec client iperf3 -c 192.168.5.1 -t0 -u -b 20Mbit
+```
+
+## How to Test "Shortest Hop algorithm"
+> **Warning**
+>
+> Stop the execution of other scripts.
+
+Clean the environment and then run the new emulation script:    
+```
+./cleanNet
+./buildNet
+./emulation_shortest_hop.sh
 ```
 To test the ping you can run:
 ```
