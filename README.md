@@ -1,4 +1,4 @@
-# Nsd-NetNs
+# Execution
 
 ## How to download code
 To download the code, inside your pc run the following command:
@@ -127,3 +127,52 @@ sudo ip netns exec client iperf3 -c 192.168.5.1 -t0 -u -b 20Mbit
 ./cleanNet.sh
 ```
 
+# Measurament
+> **Warning**
+> 
+> Perform measurements for each algorithm
+
+## Latency
+How to measure latency ?
+1. Start one of the three algorithm. (Remember to clean the environment first)
+2. Execute ping 
+3. Read the latency from the ping
+4. Creates a chart where the x-axis is time and the y-axis is latency expressed in milliseconds
+
+For example the image below shows the output of ping command. The red rettangle contains the latency values that have to be insterted in the chart. 
+
+![ping](img/ping.png)
+
+## Bandwidth
+How to measure bandwidth ?
+1. Start one of the three algorithm. (Remember to clean the environment first)
+2. Execute the iperf3 (both client and server as shown above)
+3. Read the bandwidth from the output of iperf3 command
+4. Creates a chart where the x-axis is time and the y-axis is the bandwidth expressed in Mbit/s
+
+For example the image below shows the output of iperf3 command. The red rettangle contains the bandwidth values that have to be insterted in the chart. 
+
+![ping](img/bandwidth.png)
+
+
+## Loss
+How to measure Loss ?
+1. Start one of the three algorithm. (Remember to clean the environment first)
+2. Execute the iperf3 (both client and server as shown above)
+3. Read the loss from the output of iperf3 command
+4. Create a chart where the x-axis is time and the y-axis is the loss
+
+For example the image below shows the output of iperf3 command. The red rettangle contains the loss values that have to be insterted in the chart. 
+
+![ping](img/loss.png)
+
+## Jitter
+How to measure Jitter ?
+1. Start one of the three algorithm. (Remember to clean the environment first)
+2. Execute the iperf3 (both client and server as shown above)
+3. Read the jitter from the output of iperf3 command
+4. Create a chart where the x-axis is time and the y-axis is the jitter
+
+For example the image below shows the output of iperf3 command. The red rettangle contains the jitter values that have to be insterted in the chart. 
+
+![ping](img/jitter.png)
